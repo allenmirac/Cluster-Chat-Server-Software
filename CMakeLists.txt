@@ -13,10 +13,11 @@ message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include/server)
 include_directories(${PROJECT_SOURCE_DIR}/include/server/mysqlconnectionpool)
-message(STATUS "include_directories: ${PROJECT_SOURCE_DIR}/include/server/mysqlconnectionpool")
+set(HEAD_PATH_MYSQL_POOL ${PROJECT_SOURCE_DIR}/include/server/mysqlconnectionpool)
+message(STATUS "Include directories: ${PROJECT_SOURCE_DIR}/include/server/mysqlconnectionpool")
 include_directories(${PROJECT_SOURCE_DIR}/thirdparty)
 
 # 将子目录添加到当前项目中，并且通过子目录的 CMakeLists.txt 来构建项目
 # 当前目录就是父目录，并且上面设置的变量可以给子目录中的 CMakeLists.txt 使用
-add_subdirectory(src)
+# add_subdirectory(src)
 add_subdirectory(test)

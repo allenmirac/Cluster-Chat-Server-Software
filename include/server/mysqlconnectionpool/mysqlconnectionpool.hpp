@@ -5,11 +5,16 @@
 #include <deque>
 #include <mysql_connection.h>
 #include <mysql_driver.h>
+#include <cppconn/exception.h>
+#include <cppconn/driver.h>
+#include <cppconn/connection.h>
+#include <cppconn/resultset.h>
+#include <cppconn/prepared_statement.h>
+#include <cppconn/statement.h>
 #include <muduo/base/Mutex.h>
 #include <muduo/base/Condition.h>
 #include <muduo/base/Singleton.h>
 #include <muduo/base/Logging.h>
-
 
 using namespace muduo;
 using namespace std;
@@ -17,37 +22,47 @@ using namespace std;
 class MySQLConnectionPool : public noncopyable
 {
 public:
-    static MySQLConnectionPool &instance()
-    {
-        return Singleton<MySQLConnectionPool>::instance();
-    }
+    static MySQLConnectionPool *getInstance();
+    void initPool(const string &url,
+                  const string &datebaseName,
+                  const string &user,
+                  const string &password,
+                  int poolSize = 4);
 
-    sql::Connection* getConnection();
-    bool releaseConnection(sql::Connection* conn);
+    sql::Connection *getConnection();
+    bool releaseConnection(sql::Connection *conn);
+
 private:
-    MySQLConnectionPool(const string &host,
-                        int port,
+    MySQLConnectionPool() {}
+    MySQLConnectionPool(const string &url,
                         const string &datebaseName,
                         const string &user,
                         const string &password,
                         int poolSize = 4);
+    // 防止拷贝构造和赋值操作
+    MySQLConnectionPool(const MySQLConnectionPool &) = delete;
+    MySQLConnectionPool &operator=(const MySQLConnectionPool &) = delete;
     ~MySQLConnectionPool();
 
-    sql::Connection* createConnection();
+    void initConnection(int poolSize);
+    sql::Connection *createConnection();
+    void destoryConnection(sql::Connection *conn);
+    void destoryConnectionPool();
+
 private:
-    string host_;
-    int port_;
+    string url_;
     string datebaseName_;
     string user_;
     string password_;
     int poolSize_;
-    sql::Driver* driver_;
+    sql::Driver *driver_;
     deque<sql::Connection *> connections_;
-    
+
 private:
-    MutexLock mutex_;
-    Condition notEmpty_;
-    Condition notFull_;
+    static MySQLConnectionPool *instance_;
+    static MutexLock mutex_;
+    // static Condition notEmpty_;
+    // static Condition notFull_;
 };
 
 #endif // MYSQLCONNECTIONPOOL_H
