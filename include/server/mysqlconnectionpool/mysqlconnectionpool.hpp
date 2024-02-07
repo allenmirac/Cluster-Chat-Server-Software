@@ -23,14 +23,15 @@ class MySQLConnectionPool : public noncopyable
 {
 public:
     static MySQLConnectionPool *getInstance();
-    void initPool(const string &url,
-                  const string &datebaseName,
-                  const string &user,
-                  const string &password,
+    void initPool(const string &url = "tcp://127.0.0.1:3306",
+                  const string &datebaseName = "chat",
+                  const string &user = "root",
+                  const string &password = "123456",
                   int poolSize = 4);
 
     sql::Connection *getConnection();
     bool releaseConnection(sql::Connection *conn);
+    
 
 private:
     MySQLConnectionPool() {}

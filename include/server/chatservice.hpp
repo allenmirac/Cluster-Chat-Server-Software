@@ -4,6 +4,7 @@
 #include <muduo/net/TcpConnection.h>
 #include <unordered_map>
 #include <functional>
+#include "usermodel.hpp"
 using namespace std;
 using namespace muduo;
 using namespace muduo::net;
@@ -27,8 +28,13 @@ public:
 
 private:
     ChatService();
+    ~ChatService();
+    ChatService(const ChatService &) = delete;
+    ChatService &operator=(const ChatService &) = delete;
     // 存储消息id和其对应的业务处理方法
     unordered_map<int, MsgHandler> msgHandlerMap_;
+
+    UserModel userModel_;
 };
 
 #endif // CHATSERVICE_H

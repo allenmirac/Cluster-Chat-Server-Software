@@ -1,5 +1,7 @@
 aux_source_directory(. SRC_LIST)
+aux_source_directory(./mysqlconnectionpool SRC_LIST1)
+set(ALL_SRCS ${SRC_LIST} ${SRC_LIST1})
+message(STATUS "ALL_SRCS: ${ALL_SRCS}")
+add_executable(ChatServer ${ALL_SRCS})
 
-add_executable(ChatServer ${SRC_LIST})
-
-target_link_libraries(ChatServer muduo_net muduo_base pthread)
+target_link_libraries(ChatServer mysqlcppconn muduo_net muduo_base pthread)
