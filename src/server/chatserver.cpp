@@ -44,6 +44,6 @@ void ChatServer::onMessage(const TcpConnectionPtr &conn,
     }
     catch(const std::exception& e)
     {
-        LOG_ERROR <<"JSON parse error: " << e.what();
+        LOG_ERROR <<"ChatServer::onMessage, JSON parse error: " << e.what();
     }
 }

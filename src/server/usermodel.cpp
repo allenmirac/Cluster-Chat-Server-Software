@@ -68,3 +68,26 @@ User UserModel::query(int id)
     }
     return User();
 }
+
+void UserModel::updateState(User &user)
+{
+    MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
+    mysqlPool->initPool();
+    sql::Connection *conn = mysqlPool->getConnection();
+    sql::PreparedStatement *pstmt;
+    try
+    {
+        string sql = "UPDATE User set state='online' where id=?";
+        pstmt = conn->prepareStatement(sql);
+        pstmt->setInt(1, user.getId());
+        pstmt->executeUpdate();
+        // LOG_ERROR << "res->rowsCount(): " << res->rowsCount();
+        LOG_ERROR << "UserModel::updateState, update User table where id=" << user.getId() << " successful!";
+        delete pstmt;
+        mysqlPool->releaseConnection(conn);
+    }
+    catch (sql::SQLException &e)
+    {
+        LOG_ERROR << "UserModel::updateState, SQL Exception: " << e.what();
+    }
+}

@@ -28,7 +28,7 @@ MsgHandler ChatService::getHandler(int msgid)
     {
         return [=](const TcpConnectionPtr &conn, json &js, Timestamp)
         {
-            LOG_ERROR << "msgid is " << msgid << " can not find handler!";
+            LOG_ERROR << "Msgid is " << msgid << " can not find handler!";
         };
     }
     else
@@ -57,6 +57,14 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
         }
         else
         {
+            // 连接成功
+            {
+                //锁的粒度尽可能小
+                lock_guard<mutex> lock(mutex_);
+                userConnMap_.insert({id, conn});
+            }
+            userQuery.setState("online");
+            userModel_.updateState(userQuery);
             json response;
             response["msgid"] = LOGIN_MSG_ACK;
             response["errno"] = 0;

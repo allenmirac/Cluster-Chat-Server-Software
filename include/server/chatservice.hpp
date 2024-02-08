@@ -2,6 +2,8 @@
 #define CHATSERVICE_H
 
 #include <muduo/net/TcpConnection.h>
+#include <mutex>
+#include <muduo/base/Condition.h>
 #include <unordered_map>
 #include <functional>
 #include "usermodel.hpp"
@@ -31,8 +33,15 @@ private:
     ~ChatService();
     ChatService(const ChatService &) = delete;
     ChatService &operator=(const ChatService &) = delete;
+private:
     // 存储消息id和其对应的业务处理方法
     unordered_map<int, MsgHandler> msgHandlerMap_;
+
+    // 存储连接信息
+    unordered_map<int, TcpConnectionPtr> userConnMap_;
+
+    // 连接锁
+    mutex mutex_;
 
     UserModel userModel_;
 };
