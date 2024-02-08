@@ -77,12 +77,13 @@ void UserModel::updateState(User &user)
     sql::PreparedStatement *pstmt;
     try
     {
-        string sql = "UPDATE User set state='online' where id=?";
+        string sql = "UPDATE User set state=? where id=?";
         pstmt = conn->prepareStatement(sql);
-        pstmt->setInt(1, user.getId());
+        pstmt->setString(1, user.getState());
+        pstmt->setInt(2, user.getId());
         pstmt->executeUpdate();
         // LOG_ERROR << "res->rowsCount(): " << res->rowsCount();
-        LOG_ERROR << "UserModel::updateState, update User table where id=" << user.getId() << " successful!";
+        LOG_INFO << "UserModel::updateState, 更新用户状态成功";
         delete pstmt;
         mysqlPool->releaseConnection(conn);
     }

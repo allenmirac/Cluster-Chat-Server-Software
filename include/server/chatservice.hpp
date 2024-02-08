@@ -28,6 +28,7 @@ public:
 
     MsgHandler getHandler(int msgid);
 
+    void clientQuitEcption(const TcpConnectionPtr &conn);
 private:
     ChatService();
     ~ChatService();
