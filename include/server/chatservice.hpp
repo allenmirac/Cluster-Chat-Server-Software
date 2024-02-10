@@ -29,6 +29,8 @@ public:
     MsgHandler getHandler(int msgid);
 
     void clientQuitEcption(const TcpConnectionPtr &conn);
+
+    void oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time);
 private:
     ChatService();
     ~ChatService();

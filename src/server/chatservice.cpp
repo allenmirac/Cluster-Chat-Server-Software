@@ -14,6 +14,7 @@ ChatService::ChatService()
 {
     msgHandlerMap_.insert({LOGIN_MSG, std::bind(&ChatService::login, this, _1, _2, _3)});
     msgHandlerMap_.insert({REG_MSG, std::bind(&ChatService::reg, this, _1, _2, _3)});
+    msgHandlerMap_.insert({ONE_CHAT_MSG, std::bind(&ChatService::oneChat, this, _1, _2, _3)});
 }
 
 ChatService::~ChatService()
@@ -137,4 +138,23 @@ void ChatService::clientQuitEcption(const TcpConnectionPtr &conn)
     {
         LOG_ERROR << "ChatService::clientQuitEcption, 无客户";
     }
+}
+
+
+void ChatService::oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time)
+{
+    int toId = js["to"];
+    {
+        lock_guard<mutex> lock(mutex_);
+        auto it = userConnMap_.find(toId);
+        if(it != userConnMap_.end())
+        {
+            // 用户在线
+            LOG_INFO << "ChatService::oneChat, 用户在线";
+            it->second->send(js.dump());
+            return ;
+        }
+    }
+    // 用户不在线
+    LOG_INFO << "ChatService::oneChat, 用户不在线";
 }
