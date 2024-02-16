@@ -75,7 +75,7 @@ vector<string> OfflineMessage::query(int userId)
         }
         else
         {
-            LOG_ERROR << "UserModel::query, No data found for userId: " << userId;
+            LOG_ERROR << "UserModel::query, 用户 [" << userId << "] 没有离线消息";
         }
     }
     catch(const std::exception& e)

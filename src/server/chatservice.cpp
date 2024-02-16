@@ -38,6 +38,11 @@ MsgHandler ChatService::getHandler(int msgid)
     }
 }
 
+void ChatService::reset()
+{
+    userModel_.resetState();
+}
+
 // 处理登陆业务
 void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
 {
@@ -60,10 +65,10 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
         {
             // 连接成功
             {
-                //锁的粒度尽可能小
+                // 锁的粒度尽可能小
                 lock_guard<mutex> lock(mutex_);
                 userConnMap_.insert({id, conn});
-                LOG_INFO << "ChatService::login, 用户登陆成功";
+                LOG_INFO << "ChatService::login, 用户 ["<< userQuery.getName() <<"] 登陆成功";
             }
             userQuery.setState("online");
             userModel_.updateState(userQuery);
@@ -75,7 +80,7 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
 
             //
             vector<string> v = offlineMsgModel_.query(id);
-            if(!v.empty())
+            if (!v.empty())
             {
                 response["offlinemessage"] = v;
                 // LOG_INFO << "v:" << v[0];
@@ -127,9 +132,9 @@ void ChatService::clientQuitEcption(const TcpConnectionPtr &conn)
     {
 
         lock_guard<mutex> lock(mutex_);
-        for(auto it = userConnMap_.begin(); it != userConnMap_.end(); it++)
+        for (auto it = userConnMap_.begin(); it != userConnMap_.end(); it++)
         {
-            if(it->second == conn)
+            if (it->second == conn)
             {
                 user.setId(it->first);
                 userConnMap_.erase(it);
@@ -137,7 +142,7 @@ void ChatService::clientQuitEcption(const TcpConnectionPtr &conn)
             }
         }
     }
-    if(user.getId() != -1)
+    if (user.getId() != -1)
     {
         user.setState("offline");
         userModel_.updateState(user);
@@ -149,19 +154,18 @@ void ChatService::clientQuitEcption(const TcpConnectionPtr &conn)
     }
 }
 
-
 void ChatService::oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time)
 {
     int toId = js["to"];
     {
         lock_guard<mutex> lock(mutex_);
         auto it = userConnMap_.find(toId);
-        if(it != userConnMap_.end())
+        if (it != userConnMap_.end())
         {
             // 用户在线
             LOG_INFO << "ChatService::oneChat, 用户在线";
             it->second->send(js.dump());
-            return ;
+            return;
         }
     }
     // 用户不在线

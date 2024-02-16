@@ -25,12 +25,12 @@ void ChatServer::onConnection(const TcpConnectionPtr &conn)
     if (!conn->connected())
     {
         ChatService::instance()->clientQuitEcption(conn);
-        LOG_ERROR << "ChatServer::onConnection, 客户异常退出";
+        LOG_ERROR << "ChatServer::onConnection, 用户异常退出";
         conn->shutdown();
     }
     else
     {
-        LOG_INFO << "ChatServer::onConnection, 客户上线";
+        LOG_INFO << "ChatServer::onConnection, 有一个新连接";
     }
 }
 

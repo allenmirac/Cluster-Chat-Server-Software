@@ -9,7 +9,6 @@ bool UserModel::insert(User &user)
     // char sql[1024] = {0};
     // sprintf(sql, "insert into User(name, password, state) values('%s', '%s', '%s')", user.getName(), user.getPassword(), user.getState());
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
-    mysqlPool->initPool();
     sql::Connection *conn = mysqlPool->getConnection();
     // 使用预处理语句，防止 sql 注入
     try
@@ -36,7 +35,6 @@ User UserModel::query(int id)
 {
     User user;
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
-    mysqlPool->initPool();
     sql::Connection *conn = mysqlPool->getConnection();
     sql::Statement *stmt;
     sql::ResultSet *res;
@@ -72,7 +70,6 @@ User UserModel::query(int id)
 void UserModel::updateState(User &user)
 {
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
-    mysqlPool->initPool();
     sql::Connection *conn = mysqlPool->getConnection();
     sql::PreparedStatement *pstmt;
     try
@@ -83,12 +80,32 @@ void UserModel::updateState(User &user)
         pstmt->setInt(2, user.getId());
         pstmt->executeUpdate();
         // LOG_ERROR << "res->rowsCount(): " << res->rowsCount();
-        LOG_INFO << "UserModel::updateState, 更新用户状态成功";
+        LOG_INFO << "UserModel::updateState, 更新用户 ["<< user.getName() <<"] 状态成功";
         delete pstmt;
         mysqlPool->releaseConnection(conn);
     }
     catch (sql::SQLException &e)
     {
         LOG_ERROR << "UserModel::updateState, SQL Exception: " << e.what();
+    }
+}
+
+void UserModel::resetState()
+{
+    MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
+    sql::Connection *conn = mysqlPool->getConnection();
+    sql::PreparedStatement *pstmt;
+    try
+    {
+        string sql = "UPDATE User set state='offline' where state='online'";
+        pstmt = conn->prepareStatement(sql);
+        pstmt->executeUpdate();
+        LOG_INFO << "UserModel::resetState, 重置用户状态成功";
+        delete pstmt;
+        mysqlPool->releaseConnection(conn);
+    }
+    catch (sql::SQLException &e)
+    {
+        LOG_ERROR << "UserModel::resetState, SQL Exception: " << e.what();
     }
 }

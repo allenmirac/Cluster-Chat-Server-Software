@@ -9,6 +9,7 @@ public:
     bool insert(User &user);
     User query(int id);
     void updateState(User &user);
+    void resetState();
 };
 
 #endif // USERMODEL_H

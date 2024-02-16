@@ -22,6 +22,8 @@ class ChatService
 {
 public:
     static ChatService *instance();
+
+    void reset();
     // 处理登陆业务
     void login(const TcpConnectionPtr &conn, json &js, Timestamp);
     // 处理注册业务
@@ -32,18 +34,19 @@ public:
     void clientQuitEcption(const TcpConnectionPtr &conn);
 
     void oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time);
+
 private:
     ChatService();
     ~ChatService();
     ChatService(const ChatService &) = delete;
     ChatService &operator=(const ChatService &) = delete;
+
 private:
     // 存储消息id和其对应的业务处理方法
     unordered_map<int, MsgHandler> msgHandlerMap_;
 
     // 存储连接信息
     unordered_map<int, TcpConnectionPtr> userConnMap_;
-
 
     // 连接锁
     mutex mutex_;
