@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <functional>
 #include "usermodel.hpp"
+#include "offlinemessage.hpp"
 using namespace std;
 using namespace muduo;
 using namespace muduo::net;
@@ -43,10 +44,12 @@ private:
     // 存储连接信息
     unordered_map<int, TcpConnectionPtr> userConnMap_;
 
+
     // 连接锁
     mutex mutex_;
 
     UserModel userModel_;
+    OfflineMessage offlineMsgModel_;
 };
 
 #endif // CHATSERVICE_H

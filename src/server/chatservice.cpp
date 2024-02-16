@@ -72,6 +72,15 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
             response["errno"] = 0;
             response["id"] = userQuery.getId();
             response["name"] = userQuery.getName();
+
+            //
+            vector<string> v = offlineMsgModel_.query(id);
+            if(!v.empty())
+            {
+                response["offlinemessage"] = v;
+                // LOG_INFO << "v:" << v[0];
+                offlineMsgModel_.remove(id);
+            }
             conn->send(response.dump());
         }
     }
@@ -156,5 +165,6 @@ void ChatService::oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time
         }
     }
     // 用户不在线
-    LOG_INFO << "ChatService::oneChat, 用户不在线";
+    offlineMsgModel_.insert(toId, js.dump());
+    LOG_INFO << "ChatService::oneChat, 用户不在线, 保存离线数据";
 }
