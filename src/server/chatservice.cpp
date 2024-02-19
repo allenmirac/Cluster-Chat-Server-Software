@@ -15,6 +15,7 @@ ChatService::ChatService()
     msgHandlerMap_.insert({LOGIN_MSG, std::bind(&ChatService::login, this, _1, _2, _3)});
     msgHandlerMap_.insert({REG_MSG, std::bind(&ChatService::reg, this, _1, _2, _3)});
     msgHandlerMap_.insert({ONE_CHAT_MSG, std::bind(&ChatService::oneChat, this, _1, _2, _3)});
+    msgHandlerMap_.insert({ADD_FRIEND_MSG, std::bind(&ChatService::addFriend, this, _1, _2, _3)});
 }
 
 ChatService::~ChatService()
@@ -79,13 +80,29 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
             response["name"] = userQuery.getName();
 
             //
-            vector<string> v = offlineMsgModel_.query(id);
-            if (!v.empty())
+            vector<string> vOfflineMsg = offlineMsgModel_.query(id);
+            if (!vOfflineMsg.empty())
             {
-                response["offlinemessage"] = v;
+                response["offlinemessage"] = vOfflineMsg;
                 // LOG_INFO << "v:" << v[0];
                 offlineMsgModel_.remove(id);
             }
+            
+
+            vector<User> vFriendList = friendModel_.query(id);
+            if(!vFriendList.empty())
+            {
+                vector<string> tempFriendList;
+                for(User &user: vFriendList){
+                    json js;
+                    js["id"] = user.getId();
+                    js["name"] = user.getName();
+                    js["state"] = user.getState();
+                    tempFriendList.push_back(js.dump());
+                }
+                response["friends"] = tempFriendList;
+            }
+
             conn->send(response.dump());
         }
     }
@@ -171,4 +188,12 @@ void ChatService::oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time
     // 用户不在线
     offlineMsgModel_.insert(toId, js.dump());
     LOG_INFO << "ChatService::oneChat, 用户不在线, 保存离线数据";
+}
+
+void ChatService::addFriend(const TcpConnectionPtr &conn, json &js, Timestamp time)
+{
+    int userid = js["id"];
+    int friendid = js["friendid"];
+    
+    friendModel_.insert(userid, friendid);
 }

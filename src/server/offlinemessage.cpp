@@ -1,7 +1,7 @@
 #include <cppconn/prepared_statement.h>
 #include <vector>
-#include "../../include/server/mysqlconnectionpool/mysqlconnectionpool.hpp"
-#include "../../include/server/offlinemessage.hpp"
+#include "mysqlconnectionpool.hpp"
+#include "offlinemessage.hpp"
 
 bool OfflineMessage::insert(int userId, string message)
 {

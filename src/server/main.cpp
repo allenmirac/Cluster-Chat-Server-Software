@@ -2,7 +2,7 @@
 #include <signal.h>
 #include "chatserver.hpp"
 #include "chatservice.hpp"
-#include "../../include/server/mysqlconnectionpool/mysqlconnectionpool.hpp"
+#include "mysqlconnectionpool.hpp"
 
 using namespace std;
 

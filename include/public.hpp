@@ -9,7 +9,8 @@ enum{
     LOGIN_MSG_ACK,
     REG_MSG,         // 注册消息
     REG_MSG_ACK,
-    ONE_CHAT_MSG
+    ONE_CHAT_MSG,
+    ADD_FRIEND_MSG
 };
 
 #endif // PUBLIC_H

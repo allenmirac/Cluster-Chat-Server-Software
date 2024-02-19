@@ -1,5 +1,5 @@
-#include "../../include/server/usermodel.hpp"
-#include "../../include/server/mysqlconnectionpool/mysqlconnectionpool.hpp"
+#include "usermodel.hpp"
+#include "mysqlconnectionpool.hpp"
 #include <iostream>
 #include <cppconn/prepared_statement.h>
 using namespace std;
@@ -26,7 +26,7 @@ bool UserModel::insert(User &user)
     }
     catch (sql::SQLException &e)
     {
-        LOG_ERROR << "UserModel insert SQL Exception: " << e.what();
+        LOG_ERROR << "UserModel::insert, SQL Exception: " << e.what();
     }
     return false;
 }
