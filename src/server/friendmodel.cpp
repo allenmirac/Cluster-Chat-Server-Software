@@ -33,9 +33,10 @@ vector<User> FriendModel::query(int userid)
     try
     {
         stmt = conn->createStatement();
-        string sql = "SELECT a.id, a.name, a.state FROM User as a JOIN Friend as b ON a.id = b.friendid where b.userid="+to_string(userid);
+        string sql = "SELECT a.id, a.name, a.state FROM User as a JOIN Friend as b ON a.id = b.friendid where b.userid=" + to_string(userid);
         res = stmt->executeQuery(sql);
-        while(res->next()){
+        while (res->next())
+        {
             User user;
             user.setId(res->getInt(1));
             user.setName(res->getString(2));
@@ -44,11 +45,11 @@ vector<User> FriendModel::query(int userid)
         }
         delete res;
         delete stmt;
-        
+
         return v;
         // select a.id, a.name, a,state from User as a join Friend as b on a.id=b.userid;
     }
-    catch(const sql::SQLException& e)
+    catch (const sql::SQLException &e)
     {
         LOG_ERROR << "UserModel::resetState, SQL Exception: " << e.what();
     }

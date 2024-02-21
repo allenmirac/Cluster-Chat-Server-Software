@@ -69,7 +69,7 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
                 // 锁的粒度尽可能小
                 lock_guard<mutex> lock(mutex_);
                 userConnMap_.insert({id, conn});
-                LOG_INFO << "ChatService::login, 用户 ["<< userQuery.getName() <<"] 登陆成功";
+                LOG_INFO << "ChatService::login, 用户 [" << userQuery.getName() << "] 登陆成功";
             }
             userQuery.setState("online");
             userModel_.updateState(userQuery);
@@ -87,13 +87,13 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
                 // LOG_INFO << "v:" << v[0];
                 offlineMsgModel_.remove(id);
             }
-            
 
             vector<User> vFriendList = friendModel_.query(id);
-            if(!vFriendList.empty())
+            if (!vFriendList.empty())
             {
                 vector<string> tempFriendList;
-                for(User &user: vFriendList){
+                for (User &user : vFriendList)
+                {
                     json js;
                     js["id"] = user.getId();
                     js["name"] = user.getName();
@@ -194,6 +194,6 @@ void ChatService::addFriend(const TcpConnectionPtr &conn, json &js, Timestamp ti
 {
     int userid = js["id"];
     int friendid = js["friendid"];
-    
+
     friendModel_.insert(userid, friendid);
 }

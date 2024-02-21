@@ -80,7 +80,7 @@ void UserModel::updateState(User &user)
         pstmt->setInt(2, user.getId());
         pstmt->executeUpdate();
         // LOG_ERROR << "res->rowsCount(): " << res->rowsCount();
-        LOG_INFO << "UserModel::updateState, 更新用户 ["<< user.getName() <<"] 状态成功";
+        LOG_INFO << "UserModel::updateState, 更新用户 [" << user.getName() << "] 状态成功";
         delete pstmt;
         mysqlPool->releaseConnection(conn);
     }

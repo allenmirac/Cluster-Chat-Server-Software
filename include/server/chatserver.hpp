@@ -24,8 +24,8 @@ private:
                    Buffer *buffer,
                    Timestamp time);
 
-    TcpServer server_;  // 服务器主类
-    EventLoop *loop_;   // 时间循环的指针
+    TcpServer server_; // 服务器主类
+    EventLoop *loop_;  // 时间循环的指针
 };
 
 #endif // CHATSERVER_H
