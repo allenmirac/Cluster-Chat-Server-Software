@@ -9,6 +9,7 @@
 #include "usermodel.hpp"
 #include "offlinemessage.hpp"
 #include "friendmodel.hpp"
+#include "groupmodel.hpp"
 using namespace std;
 using namespace muduo;
 using namespace muduo::net;
@@ -37,6 +38,9 @@ public:
     void oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time);
     void addFriend(const TcpConnectionPtr &conn, json &js, Timestamp time);
 
+    void createGroup(const TcpConnectionPtr &conn, json &js, Timestamp time);
+    void joinGroup(const TcpConnectionPtr &conn, json &js, Timestamp time);
+    void groupChat(const TcpConnectionPtr &conn, json &js, Timestamp time);
 private:
     ChatService();
     ~ChatService();
@@ -56,6 +60,7 @@ private:
     UserModel userModel_;
     OfflineMessage offlineMsgModel_;
     FriendModel friendModel_;
+    GroupModel groupModel_;
 };
 
 #endif // CHATSERVICE_H

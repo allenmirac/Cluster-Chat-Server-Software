@@ -5,22 +5,25 @@ void GroupModel::createGroup(Group &group)
 {
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
+    sql::ResultSet *res;
+    sql::PreparedStatement *pstmt;
     try
     {
-        sql::PreparedStatement *pstmt;
-        pstmt = conn->prepareStatement("insert into AllGroup(groupname, groupdesc) values(?, ?)");
+        string sql = "insert into AllGroup(groupname, groupdesc) values(?, ?)";
+        pstmt = conn->prepareStatement(sql);
         pstmt->setString(1, group.getName());
         pstmt->setString(2, group.getDesc());
         pstmt->executeUpdate();
-
-        sql::ResultSet *res;
-        res = pstmt->executeQuery("SELECT LAST_INSERT_ID() AS last_id");
+        // res = pstmt->getGeneratedKeys();
+        sql = "SELECT LAST_INSERT_ID() AS last_id";
+        pstmt = conn->prepareStatement(sql);
+        res = pstmt->executeQuery();
         if (res->next())
         {
             group.setId(res->getInt(1));
         }
-
         delete pstmt;
+        delete res;
         mysqlPool->releaseConnection(conn);
     }
     catch (sql::SQLException &e)
@@ -63,7 +66,6 @@ vector<Group> GroupModel::queryGroups(int userid)
         stmt = conn->createStatement();
         string sql = "select a.id, a.groupname, a.groupdesc from AllGroup as a join GroupUser as b on a.id=b.groupid where b.userid=" + to_string(userid);
         res = stmt->executeQuery(sql);
-        // LOG_ERROR << "res->rowsCount(): " << res->rowsCount();
         while (res->next())
         {
             Group group;
@@ -113,8 +115,10 @@ vector<int> GroupModel::queryGroupUsers(int userid, int groupid)
     try
     {
         stmt = conn->createStatement();
-        string sql = "select userid from GroupUser where groupid=" + to_string(groupid);
+        string sql = "select userid from GroupUser where groupid=" + to_string(groupid) + " and userid<>" + to_string(userid);
+        // LOG_INFO << sql;
         res = stmt->executeQuery(sql);
+        
         while (res->next())
         {
             int userid;

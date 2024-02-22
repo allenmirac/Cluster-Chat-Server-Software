@@ -16,6 +16,9 @@ ChatService::ChatService()
     msgHandlerMap_.insert({REG_MSG, std::bind(&ChatService::reg, this, _1, _2, _3)});
     msgHandlerMap_.insert({ONE_CHAT_MSG, std::bind(&ChatService::oneChat, this, _1, _2, _3)});
     msgHandlerMap_.insert({ADD_FRIEND_MSG, std::bind(&ChatService::addFriend, this, _1, _2, _3)});
+    msgHandlerMap_.insert({CREATE_GROUP_MSG, std::bind(&ChatService::createGroup, this, _1, _2, _3)});
+    msgHandlerMap_.insert({JOIN_GROUP_MSG, std::bind(&ChatService::joinGroup, this, _1, _2, _3)});
+    msgHandlerMap_.insert({GROUP_CHAT_MSG, std::bind(&ChatService::groupChat, this, _1, _2, _3)});
 }
 
 ChatService::~ChatService()
@@ -196,4 +199,45 @@ void ChatService::addFriend(const TcpConnectionPtr &conn, json &js, Timestamp ti
     int friendid = js["friendid"];
 
     friendModel_.insert(userid, friendid);
+}
+
+void ChatService::createGroup(const TcpConnectionPtr &conn, json &js, Timestamp time)
+{
+    int userid = js["id"];
+    string groupname = js["groupname"];
+    string groupdesc = js["groupdesc"];
+
+    Group group(-1, groupname, groupdesc);
+    groupModel_.createGroup(group);
+    groupModel_.joinGroup(userid, group.getId(), "creator");
+}
+
+void ChatService::joinGroup(const TcpConnectionPtr &conn, json &js, Timestamp time)
+{
+    int userid = js["userid"];
+    int groupid = js["groupid"];
+
+    groupModel_.joinGroup(userid, groupid, "normal");
+}
+
+void ChatService::groupChat(const TcpConnectionPtr &conn, json &js, Timestamp time)
+{
+    int userid = js["userid"];
+    int groupid = js["groupid"];
+    vector<int> groupUsers = groupModel_.queryGroupUsers(userid, groupid);
+    
+    lock_guard<mutex> lock(mutex_);
+    for (int id : groupUsers)
+    {
+        
+        auto it = userConnMap_.find(id);
+        if (it != userConnMap_.end())
+        {
+            it->second->send(js.dump());
+        }
+        else
+        {
+            offlineMsgModel_.insert(userid, js.dump());
+        }
+    }
 }
