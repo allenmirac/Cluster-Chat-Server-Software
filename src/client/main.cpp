@@ -1,11 +1,38 @@
 #include <iostream>
 #include <unordered_map>
 #include <functional>
+#include <vector>
+#include <chrono>
+#include <ctime>
+#include "user.hpp"
+#include "group.hpp"
+#include "public.hpp"
 using namespace std;
 
-bool isMainMenuRunning = true;
-// 获取主菜单
+#include "json.hpp"
+using json = nlohmann::json;
+
+#include <unistd.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <semaphore.h>
+#include <atomic>
+
+bool isMainMenuRunning = false;
+atomic_bool isLoginSuccess{false};
+sem_t rwSem; // 读写的信号通知
+User currentUser;
+vector<User> currentUserFriendList;
+vector<Group> currentUserGroupList;
+
+void error_if(bool condition, const char *errmsg);
+
 void mainmenu(int);
+void readTaskHandler(int clientfd);
+void showCurrentUserData();
+string getCurrentTime();
 
 int main()
 {
@@ -14,7 +41,169 @@ int main()
     return 0;
 }
 
+void doRegResponse(json &responsejs)
+{
+    if (0 != responsejs["errno"])
+    {
+        cerr << "name is already exist, register error!" << endl;
+    }
+    else
+    {
+        cout << "name register success, userid is " << responsejs["id"] << ", do not forget it" << endl;
+    }
+}
+
+void doLoginResponse(json &responsejs)
+{
+    if (0 != responsejs["errno"])
+    {
+        cerr << responsejs["errmsg"] << endl;
+        isLoginSuccess = false;
+    }
+    else
+    {
+        currentUser.setId(responsejs["id"]);
+        currentUser.setName(responsejs["name"]);
+        if (responsejs.contains("friends"))
+        {
+            currentUserFriendList.clear();
+            vector<string> vec = responsejs["friends"];
+            for (string &str : vec)
+            {
+                json js = json::parse(str);
+                User user;
+                user.setId(js["id"]);
+                user.setName(js["name"]);
+                user.setState(js["state"]);
+                currentUserFriendList.push_back(user);
+            }
+        }
+
+        if (responsejs.contains("groups"))
+        {
+            currentUserGroupList.clear();
+            vector<string> vec = responsejs["groups"];
+            for (string &groupstr : vec)
+            {
+                json grpjs = json::parse(groupstr);
+                Group group;
+                group.setId(grpjs["id"]);
+                group.setName(grpjs["groupname"]);
+                group.setDesc(grpjs["groupdesc"]);
+
+                vector<string> vec2 = grpjs["users"];
+                vector<GroupUser> groupVec;
+                for (string &userstr : vec2)
+                {
+                    GroupUser user;
+                    json js = json::parse(userstr);
+                    user.setId(js["id"]);
+                    user.setName(js["name"]);
+                    user.setState(js["state"]);
+                    user.setRole(js["role"]);
+                    groupVec.push_back(user);
+                }
+                group.setUsers(groupVec);
+                currentUserGroupList.push_back(group);
+            }
+        }
+        showCurrentUserData();
+
+        if (responsejs.contains("offlinemessage"))
+        {
+            vector<string> vec = responsejs["offlinemessage"];
+            for (string &str : vec)
+            {
+                json js = json::parse(str);
+                // time + [id] + name + " said: " + xxx
+                if (ONE_CHAT_MSG == js["msgid"].get<int>())
+                {
+                    cout << js["time"].get<string>() << " [" << js["id"] << "]" << js["name"].get<string>()
+                         << " said: " << js["msg"].get<string>() << endl;
+                }
+                else
+                {
+                    cout << "群消息[" << js["groupid"] << "]:" << js["time"].get<string>() << " [" << js["id"] << "]" << js["name"].get<string>()
+                         << " said: " << js["msg"].get<string>() << endl;
+                }
+            }
+        }
+        isLoginSuccess = true;
+    }
+}
+
+void readTaskHandler(int clientfd)
+{
+    for (;;)
+    {
+        char buffer[1024] = {0};
+        int len = recv(clientfd, buffer, 1024, 0);
+        if (len == -1 || len == 0)
+        {
+            close(clientfd);
+            exit(-1);
+        }
+
+        json js = json::parse(buffer);
+        int msgType = js["msgid"];
+        switch (msgType)
+        {
+        case ONE_CHAT_MSG:
+            cout << js["time"].get<string>() << " [" << js["id"] << "]" << js["name"].get<string>()
+                 << " said: " << js["msg"].get<string>() << endl;
+            break;
+        case GROUP_CHAT_MSG:
+            cout << "群消息[" << js["groupid"] << "]:" << js["time"].get<string>() << " [" << js["id"] << "]" << js["name"].get<string>()
+                 << " said: " << js["msg"].get<string>() << endl;
+            break;
+        case LOGIN_MSG_ACK:
+            doLoginResponse(js);
+            sem_post(&rwSem);
+            break;
+        case REG_MSG_ACK:
+            doRegResponse(js);
+            sem_post(&rwSem);
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void showCurrentUserData()
+{
+    cout << "=============Current User=================" << endl;
+    cout << "Current User id: [ " << currentUser.getId() << " ] name: [ " << currentUser.getName() << " ]" << endl;
+    cout << "-------------Friend List------------------" << endl;
+    if (!currentUserFriendList.empty())
+    {
+        for (User &user : currentUserFriendList)
+        {
+            cout << user.getId() << " " << user.getName() << " " << user.getState() << endl;
+        }
+    }
+    cout << "-------------Group List-------------------" << endl;
+    if (!currentUserGroupList.empty())
+    {
+        for (Group &group : currentUserGroupList)
+        {
+            cout << group.getId() << " " << group.getName() << " " << group.getDesc() << endl;
+            for (GroupUser &user : group.getGroupUsers())
+            {
+                cout << user.getId() << " " << user.getName() << " " << user.getState() << " " << user.getRole() << endl;
+            }
+        }
+    }
+    cout << "===========================================" << endl;
+}
+
 void help(int fd = 0, string str = "");
+void chat(int, string);
+void addFriend(int, string);
+void createGroup(int, string);
+void joinGroup(int, string);
+void groupChat(int, string);
+void loginout(int, string);
 
 unordered_map<string, string> commandMap = {
     {"help", "显示所有支持的命令，格式help"},
@@ -26,9 +215,13 @@ unordered_map<string, string> commandMap = {
     {"loginout", "注销，格式loginout"}};
 
 unordered_map<string, function<void(int, string)>> commandHandlerMap = {
-    {"help", help}
-
-};
+    {"help", help},
+    {"chat", chat},
+    {"addFriend", addFriend},
+    {"createGroup", createGroup},
+    {"joinGroup", joinGroup},
+    {"groupChat", groupChat},
+    {"loginout", loginout}};
 
 void mainmenu(int clientFd)
 {
@@ -66,4 +259,124 @@ void help(int, string)
         cout << p.first << ":" << p.second << endl;
     }
     cout << endl;
+}
+
+void chat(int clientfd, string str)
+{
+    int idx = str.find(":");
+    error_if(-1 == idx, "chat command invalid");
+
+    int friendid = atoi(str.substr(0, idx).c_str());
+    string message = str.substr(idx + 1, str.size() - idx);
+
+    json js;
+    js["msgid"] = ONE_CHAT_MSG;
+    js["id"] = currentUser.getId();
+    js["name"] = currentUser.getName();
+    js["to"] = friendid;
+    js["msg"] = message;
+    js["time"] = getCurrentTime();
+    string buf = js.dump();
+
+    int len = send(clientfd, buf.c_str(), buf.size(), 0); // 向客户端套接字发送数据
+    error_if(-1 == len, "send chat msg error");
+}
+
+void addFriend(int clientfd, string str)
+{
+    int friendid = atoi(str.c_str());
+    json js;
+    js["msgid"] = ADD_FRIEND_MSG;
+    js["id"] = currentUser.getId();
+    js["friendid"] = friendid;
+    string buf = js.dump();
+
+    int len = send(clientfd, buf.c_str(), buf.size(), 0);
+    error_if(-1 == len, "send addFriend msg error");
+}
+
+void createGroup(int clientfd, string str)
+{
+    int idx = str.find(":");
+    error_if(-1 == idx, "creategroup command invalid!!!");
+
+    string groupName = str.substr(0, idx);
+    string groupDesc = str.substr(idx + 1, str.size() - idx);
+    json js;
+    js["msgid"] = CREATE_GROUP_MSG;
+    js["id"] = currentUser.getId();
+    js["groupname"] = groupName;
+    js["groupdesc"] = groupDesc;
+    string buf = js.dump();
+
+    int len = send(clientfd, buf.c_str(), buf.size(), 0);
+    error_if(-1 == len, "createGroup msg error!!!");
+}
+
+void joinGroup(int clientfd, string str)
+{
+    int groupid = atoi(str.c_str());
+    json js;
+    js["msgid"] = JOIN_GROUP_MSG;
+    js["id"] = currentUser.getId();
+    js["groupid"] = groupid;
+    string buf = js.dump();
+
+    int len = send(clientfd, buf.c_str(), buf.size(), 0);
+    error_if(-1 == len, "joinGroup msg error !!!");
+}
+
+void groupChat(int clientfd, string str)
+{
+    int idx = str.find(":");
+    error_if(-1 == idx, "groupChat command invalid!!");
+
+    int groupid = atoi(str.substr(0, idx).c_str());
+    string groupMsg = str.substr(idx + 1, str.size() - idx);
+
+    json js;
+    js["msgid"] = GROUP_CHAT_MSG;
+    js["id"] = currentUser.getId();
+    js["name"] = currentUser.getName();
+    js["groupid"] = groupid;
+    js["msg"] = groupMsg;
+    js["time"] = getCurrentTime();
+    string buf = js.dump();
+
+    int len = send(clientfd, buf.c_str(), buf.size(), 0);
+    error_if(-1 == len, "groupChat msg error!!");
+}
+
+void loginOut(int clientfd, string str)
+{
+    json js;
+    js["msgid"] = LOGIN_OUT_MSG;
+    js["id"] = currentUser.getId();
+    string buf = js.dump();
+
+    int len = send(clientfd, buf.c_str(), buf.size(), 0);
+    error_if(-1 == len, "send login msg error!!");
+    if (-1 != len)
+    {
+        isMainMenuRunning = false;
+    }
+}
+
+string getCurrentTime()
+{
+    auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    struct tm *ptm = localtime(&tt);
+    char date[60] = {0};
+    sprintf(date, "%d-%02d-%02d %02d:%02d:%02d",
+            (int)ptm->tm_year + 1900, (int)ptm->tm_mon + 1, (int)ptm->tm_mday,
+            (int)ptm->tm_hour, (int)ptm->tm_min, (int)ptm->tm_sec);
+    return string(date);
+}
+
+void error_if(bool condition, const char *errmsg)
+{
+    if (condition)
+    {
+        cerr << errmsg << endl;
+    }
 }

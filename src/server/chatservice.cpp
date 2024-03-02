@@ -106,6 +106,32 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
                 response["friends"] = tempFriendList;
             }
 
+            vector<Group> vGroupList = groupModel_.queryGroups(id);
+            if(!vGroupList.empty())
+            {
+                vector<string> groupV;
+                for(Group &group : vGroupList)
+                {
+                    json groupJson;
+                    groupJson["id"] = group.getId();
+                    groupJson["groupname"] = group.getName();
+                    groupJson["groupdesc"] = group.getDesc();
+                    vector<string> vGroupUser;
+                    for(GroupUser &user : group.getGroupUsers())
+                    {
+                        json js;
+                        js["id"] = user.getId();
+                        js["name"] = user.getName();
+                        js["state"] = user.getState();
+                        js["role"] = user.getRole();
+                        vGroupUser.push_back(js.dump());
+                    }
+                    groupJson["users"] = vGroupUser;
+                    groupV.push_back(groupJson.dump());
+                }
+                response["groups"] = groupV;
+            }
+
             conn->send(response.dump());
         }
     }
@@ -214,7 +240,7 @@ void ChatService::createGroup(const TcpConnectionPtr &conn, json &js, Timestamp 
 
 void ChatService::joinGroup(const TcpConnectionPtr &conn, json &js, Timestamp time)
 {
-    int userid = js["userid"];
+    int userid = js["id"];
     int groupid = js["groupid"];
 
     groupModel_.joinGroup(userid, groupid, "normal");
@@ -222,7 +248,7 @@ void ChatService::joinGroup(const TcpConnectionPtr &conn, json &js, Timestamp ti
 
 void ChatService::groupChat(const TcpConnectionPtr &conn, json &js, Timestamp time)
 {
-    int userid = js["userid"];
+    int userid = js["id"];
     int groupid = js["groupid"];
     vector<int> groupUsers = groupModel_.queryGroupUsers(userid, groupid);
     
