@@ -27,7 +27,7 @@ public:
                   const string &datebaseName = "chat",
                   const string &user = "root",
                   const string &password = "123456",
-                  int poolSize = 4);
+                  int poolSize = 8);
 
     sql::Connection *getConnection();
     bool releaseConnection(sql::Connection *conn);

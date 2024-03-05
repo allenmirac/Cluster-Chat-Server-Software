@@ -4,6 +4,7 @@
 #include <vector>
 #include <chrono>
 #include <ctime>
+#include <thread>
 #include "user.hpp"
 #include "group.hpp"
 #include "public.hpp"
@@ -34,10 +35,119 @@ void readTaskHandler(int clientfd);
 void showCurrentUserData();
 string getCurrentTime();
 
-int main()
+int main(int argc, char *argv[])
 {
-    cout << "Hello world" << endl;
-    mainmenu(0);
+    if (argc < 3)
+    {
+        cerr << "command invalid ! example:./ChatClient 127.1 2222" << endl;
+        exit(-1);
+    }
+    char *ip = argv[1];
+    uint16_t port = atoi(argv[2]);
+    int clientfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (-1 == clientfd)
+    {
+        cerr << "Client socket create error!!" << endl;
+        exit(-1);
+    }
+
+    sockaddr_in server;
+    memset(&server, 0, sizeof(sockaddr_in));
+    server.sin_family = AF_INET; // 地址族，设置为IPv4
+    server.sin_port = htons(port);
+    server.sin_addr.s_addr = inet_addr(ip);
+    cerr << "Port:" << port << " ip:" << ip << endl;
+    if (-1 == connect(clientfd, (sockaddr *)&server, sizeof(sockaddr_in)))
+    {
+        cerr << "Client connect server error!!" << endl;
+        close(clientfd);
+        exit(-1);
+    }
+
+    sem_init(&rwSem, 0, 0);
+    thread readTask(readTaskHandler, clientfd);
+    readTask.detach();
+
+    for (;;)
+    {
+        cout << "=======================" << endl;
+        cout << "1. login" << endl;
+        cout << "2. register" << endl;
+        cout << "3. quit" << endl;
+        cout << "=======================" << endl;
+        cout << "Your choice:";
+        int choice = 0;
+        cin >> choice;
+        cin.get();
+
+        switch (choice)
+        {
+        case 1:
+        {
+            int id = 0;
+            char pwd[20] = {0};
+            cout << "Userid:";
+            cin >> id;
+            cin.get();
+            cout << "Password:";
+            cin.getline(pwd, 20);
+
+            json js;
+            js["msgid"] = LOGIN_MSG;
+            js["id"] = id;
+            js["password"] = pwd;
+            string request = js.dump();
+
+            isLoginSuccess = false;
+            int len = send(clientfd, request.c_str(), request.size(), 0);
+            if (-1 == len)
+            {
+                cerr << "Send login msg error!!" << request << endl;
+            }
+            sem_wait(&rwSem);
+            if (isLoginSuccess)
+            {
+                isMainMenuRunning = true;
+                mainmenu(clientfd);
+            }
+        }
+        break;
+        case 2: // register业务
+        {
+            char name[50] = {0};
+            char pwd[50] = {0};
+            cout << "username:";
+            cin.getline(name, 50);
+            cout << "userpassword:";
+            cin.getline(pwd, 50);
+
+            json js;
+            js["msgid"] = REG_MSG;
+            js["name"] = name;
+            js["password"] = pwd;
+            string request = js.dump();
+
+            int len = send(clientfd, request.c_str(), strlen(request.c_str()) + 1, 0);
+            if (len == -1)
+            {
+                cerr << "send reg msg error:" << request << endl;
+            }
+
+            sem_wait(&rwSem); // 等待信号量，子线程处理完注册消息会通知
+        }
+        break;
+        case 3: // quit业务
+            close(clientfd);
+            sem_destroy(&rwSem);
+            exit(0);
+
+        default:
+            cerr << "Invalid input!!" << endl;
+            break;
+        }
+    }
+    // cout << "Hello world" << endl;
+    // mainmenu(0);
     return 0;
 }
 
@@ -265,6 +375,9 @@ void chat(int clientfd, string str)
 {
     int idx = str.find(":");
     error_if(-1 == idx, "chat command invalid");
+    if(-1 == idx){
+        return ;
+    }
 
     int friendid = atoi(str.substr(0, idx).c_str());
     string message = str.substr(idx + 1, str.size() - idx);
@@ -299,6 +412,9 @@ void createGroup(int clientfd, string str)
 {
     int idx = str.find(":");
     error_if(-1 == idx, "creategroup command invalid!!!");
+    if(-1 == idx){
+        return ;
+    }
 
     string groupName = str.substr(0, idx);
     string groupDesc = str.substr(idx + 1, str.size() - idx);
@@ -330,6 +446,9 @@ void groupChat(int clientfd, string str)
 {
     int idx = str.find(":");
     error_if(-1 == idx, "groupChat command invalid!!");
+    if(-1 == idx){
+        return ;
+    }
 
     int groupid = atoi(str.substr(0, idx).c_str());
     string groupMsg = str.substr(idx + 1, str.size() - idx);
@@ -347,7 +466,7 @@ void groupChat(int clientfd, string str)
     error_if(-1 == len, "groupChat msg error!!");
 }
 
-void loginOut(int clientfd, string str)
+void loginout(int clientfd, string str)
 {
     json js;
     js["msgid"] = LOGIN_OUT_MSG;
@@ -355,7 +474,7 @@ void loginOut(int clientfd, string str)
     string buf = js.dump();
 
     int len = send(clientfd, buf.c_str(), buf.size(), 0);
-    error_if(-1 == len, "send login msg error!!");
+    error_if(-1 == len, "send loginmsg msg error!!");
     if (-1 != len)
     {
         isMainMenuRunning = false;

@@ -13,6 +13,7 @@ ChatService *ChatService::instance()
 ChatService::ChatService()
 {
     msgHandlerMap_.insert({LOGIN_MSG, std::bind(&ChatService::login, this, _1, _2, _3)});
+    msgHandlerMap_.insert({LOGIN_OUT_MSG, std::bind(&ChatService::loginOut, this, _1, _2, _3)});
     msgHandlerMap_.insert({REG_MSG, std::bind(&ChatService::reg, this, _1, _2, _3)});
     msgHandlerMap_.insert({ONE_CHAT_MSG, std::bind(&ChatService::oneChat, this, _1, _2, _3)});
     msgHandlerMap_.insert({ADD_FRIEND_MSG, std::bind(&ChatService::addFriend, this, _1, _2, _3)});
@@ -170,6 +171,20 @@ void ChatService::reg(const TcpConnectionPtr &conn, json &js, Timestamp time)
         response["errno"] = 1;
         conn->send(response.dump());
     }
+}
+
+void ChatService::loginOut(const TcpConnectionPtr &conn, json &js, Timestamp time)
+{
+    int id = js["id"];
+    {
+        lock_guard<mutex> lock(mutex_);
+        auto it = userConnMap_.find(id);
+        if(it!=userConnMap_.end()){
+            userConnMap_.erase(it);
+        }
+    }
+    User user(id, "", "", "offline");
+    userModel_.updateState(user);
 }
 
 void ChatService::clientQuitEcption(const TcpConnectionPtr &conn)

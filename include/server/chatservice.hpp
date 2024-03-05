@@ -41,6 +41,7 @@ public:
     void createGroup(const TcpConnectionPtr &conn, json &js, Timestamp time);
     void joinGroup(const TcpConnectionPtr &conn, json &js, Timestamp time);
     void groupChat(const TcpConnectionPtr &conn, json &js, Timestamp time);
+    void loginOut(const TcpConnectionPtr &conn, json &js, Timestamp time);
 private:
     ChatService();
     ~ChatService();
