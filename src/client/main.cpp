@@ -167,7 +167,7 @@ void doLoginResponse(json &responsejs)
 {
     if (0 != responsejs["errno"])
     {
-        cerr << responsejs["errmsg"] << endl;
+        cerr << responsejs["errormsg"] << endl;
         isLoginSuccess = false;
     }
     else
