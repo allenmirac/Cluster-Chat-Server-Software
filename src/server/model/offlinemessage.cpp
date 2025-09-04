@@ -1,4 +1,3 @@
-#include <cppconn/prepared_statement.h>
 #include <vector>
 #include "mysqlconnectionpool.hpp"
 #include "offlinemessage.hpp"

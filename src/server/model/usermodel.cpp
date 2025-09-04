@@ -1,7 +1,6 @@
 #include "usermodel.hpp"
 #include "mysqlconnectionpool.hpp"
 #include <iostream>
-#include <cppconn/prepared_statement.h>
 using namespace std;
 
 bool UserModel::insert(User &user)
