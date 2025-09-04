@@ -67,11 +67,3 @@ int main(){
     return 0;
 }
 // g++ -o muduoserver_ muduoserver_.cpp  -lmuduo_net -lmuduo_base -lpthread
-
-// create table User(id INT PIMARY KEY auto_increment,name VARCHAR(50) NOT NULL UNIQUE,password varchar(50) not null,state ENUM('online', offline) default 'online');
-// CREATE TABLE Friend(userid INT NOT NULL, friendid INT NOT NULL);
-// CREATE TABLE AllGroup(id INT PRIMARY KEY AUTO_INCREMENT, groupname VARCHAR(50) NOT NULL, groupdesc VARCHAR(200) DEFAULT '');
-// CREATE TABLE GroupUser(groupid INT PRIMARY KEY, userid INT NOT NULL, grouprole ENUM('creator', 'normal') DEFAULT 'normal');
-// CREATE TABLE OfflineMessage(userid INT PRIMARY KEY, message VARCHAR(500) NOT NULL);
-
-
