@@ -25,7 +25,6 @@ void ChatServer::onConnection(const TcpConnectionPtr &conn)
     if (!conn->connected())
     {
         ChatService::instance()->clientQuitEcption(conn);
-        LOG_ERROR << "ChatServer::onConnection, 用户异常退出";
         conn->shutdown();
     }
     else

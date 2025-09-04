@@ -209,10 +209,6 @@ void ChatService::clientQuitEcption(const TcpConnectionPtr &conn)
         userModel_.updateState(user);
         LOG_ERROR << "ChatService::clientQuitEcption, 用户下线";
     }
-    else
-    {
-        LOG_ERROR << "ChatService::clientQuitEcption, 无客户";
-    }
 }
 
 void ChatService::oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time)
