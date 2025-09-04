@@ -1,8 +1,8 @@
 #include "friendmodel.hpp"
 #include "mysqlconnectionpool.hpp"
-#include <cppconn/prepared_statement.h>
+#include <mysql-cppconn/jdbc/cppconn/prepared_statement.h>
 
-void FriendModel::insert(int userid, int frindid)
+void FriendModel::insert(int userid, int friendid)
 {
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
@@ -10,8 +10,14 @@ void FriendModel::insert(int userid, int frindid)
     {
         sql::PreparedStatement *pstmt;
         pstmt = conn->prepareStatement("insert into Friend(userid, friendid) values(?, ?)");
-        pstmt->setInt(1, userid);
-        pstmt->setInt(2, frindid);
+        // 互为好友关系对约束
+        if(userid < friendid) {
+            pstmt->setInt(1, userid);
+            pstmt->setInt(2, friendid);
+        } else {
+            pstmt->setInt(1, friendid);
+            pstmt->setInt(2, userid);
+        }
         pstmt->executeUpdate();
 
         delete pstmt;
