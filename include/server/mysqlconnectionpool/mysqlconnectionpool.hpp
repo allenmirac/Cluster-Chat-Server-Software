@@ -3,14 +3,14 @@
 
 #include <string>
 #include <deque>
-#include <mysql_connection.h>
-#include <mysql_driver.h>
-#include <cppconn/exception.h>
-#include <cppconn/driver.h>
-#include <cppconn/connection.h>
-#include <cppconn/resultset.h>
-#include <cppconn/prepared_statement.h>
-#include <cppconn/statement.h>
+#include <mysql-cppconn/jdbc/mysql_connection.h>
+#include <mysql-cppconn/jdbc/mysql_driver.h>
+#include <mysql-cppconn/jdbc/cppconn/exception.h>
+#include <mysql-cppconn/jdbc/cppconn/driver.h>
+#include <mysql-cppconn/jdbc/cppconn/connection.h>
+#include <mysql-cppconn/jdbc/cppconn/resultset.h>
+#include <mysql-cppconn/jdbc/cppconn/prepared_statement.h>
+#include <mysql-cppconn/jdbc/cppconn/statement.h>
 #include <muduo/base/Mutex.h>
 #include <muduo/base/Condition.h>
 #include <muduo/base/Singleton.h>
