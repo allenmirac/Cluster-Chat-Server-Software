@@ -26,6 +26,7 @@ int main()
 
     server.start();
     loop.loop();
+    // loop.runInLoop();
 
     return 0;
 }

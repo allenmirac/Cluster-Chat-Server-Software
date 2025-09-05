@@ -219,7 +219,26 @@ void ChatService::oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time
         LOG_WARN << "ChatService::oneChat, 空消息被丢弃";
         return;
     }
+    int id = js["id"];
     int toId = js["to"];
+    bool isFriend = false;
+    vector<User> vFriendList = friendModel_.query(id);
+    if (!vFriendList.empty())
+    {
+        vector<string> tempFriendList;
+        for (User &user : vFriendList)
+        {
+            int tempId = user.getId();
+            if(tempId == toId) {
+                isFriend = true;
+                break;
+            }
+        }
+    }
+    if (isFriend == false) {
+        LOG_WARN << "ChatService::oneChat, 无此好友";
+        return;
+    }
     {
         lock_guard<mutex> lock(mutex_);
         auto it = userConnMap_.find(toId);
