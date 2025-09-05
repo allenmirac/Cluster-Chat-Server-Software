@@ -381,6 +381,11 @@ void chat(int clientfd, string str)
 
     int friendid = atoi(str.substr(0, idx).c_str());
     string message = str.substr(idx + 1, str.size() - idx);
+    if (message.empty())
+    {
+        cerr << "私聊消息不能为空！" << endl;
+        return;
+    }
 
     json js;
     js["msgid"] = ONE_CHAT_MSG;
@@ -453,6 +458,12 @@ void groupChat(int clientfd, string str)
     int groupid = atoi(str.substr(0, idx).c_str());
     string groupMsg = str.substr(idx + 1, str.size() - idx);
 
+    if (groupMsg.empty())
+    {
+        cerr << "群聊消息不能为空！" << endl;
+        return;
+    }
+
     json js;
     js["msgid"] = GROUP_CHAT_MSG;
     js["id"] = currentUser.getId();
@@ -471,6 +482,7 @@ void loginout(int clientfd, string str)
     json js;
     js["msgid"] = LOGIN_OUT_MSG;
     js["id"] = currentUser.getId();
+    js["name"] = currentUser.getName();
     string buf = js.dump();
 
     int len = send(clientfd, buf.c_str(), buf.size(), 0);

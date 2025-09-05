@@ -22,6 +22,7 @@ int main()
     ChatServer server(&loop, addr, "ChatServer");
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     mysqlPool->initPool();
+    ChatService::instance()->reset();
 
     server.start();
     loop.loop();

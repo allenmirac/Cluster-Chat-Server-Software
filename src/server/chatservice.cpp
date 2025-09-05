@@ -176,6 +176,7 @@ void ChatService::reg(const TcpConnectionPtr &conn, json &js, Timestamp time)
 void ChatService::loginOut(const TcpConnectionPtr &conn, json &js, Timestamp time)
 {
     int id = js["id"];
+    string name = js["name"];
     {
         lock_guard<mutex> lock(mutex_);
         auto it = userConnMap_.find(id);
@@ -183,7 +184,7 @@ void ChatService::loginOut(const TcpConnectionPtr &conn, json &js, Timestamp tim
             userConnMap_.erase(it);
         }
     }
-    User user(id, "", "", "offline");
+    User user(id, name, "", "offline");
     userModel_.updateState(user);
 }
 
@@ -213,6 +214,11 @@ void ChatService::clientQuitEcption(const TcpConnectionPtr &conn)
 
 void ChatService::oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time)
 {
+    if (js["msg"].is_null() || js["msg"].get<string>().empty())
+    {
+        LOG_WARN << "ChatService::oneChat, 空消息被丢弃";
+        return;
+    }
     int toId = js["to"];
     {
         lock_guard<mutex> lock(mutex_);
@@ -259,6 +265,12 @@ void ChatService::joinGroup(const TcpConnectionPtr &conn, json &js, Timestamp ti
 
 void ChatService::groupChat(const TcpConnectionPtr &conn, json &js, Timestamp time)
 {
+    if (js["msg"].is_null() || js["msg"].get<string>().empty())
+    {
+        LOG_WARN << "ChatService::groupChat, 空群消息被丢弃";
+        return;
+    }
+
     int userid = js["id"];
     int groupid = js["groupid"];
     vector<int> groupUsers = groupModel_.queryGroupUsers(userid, groupid);
