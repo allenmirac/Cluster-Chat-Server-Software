@@ -75,6 +75,27 @@
     * 如果在线，通过获取到的`TcpConnectionPtr`，通过`conn->send()`直接发送消息。
     * 如果不在线，将消息存储在OfflineMessage表中。
 
+## 压力测试
+
+在单机环境下，我们对比了有无 Redis 的性能。
+
+运行的测试命令：
+```bash
+./testPresure 127.0.0.1 2222 100 10
+```
+
+结果显示无 Redis 版本QPS达12161，平均延迟仅 8ms，而有 Redis 版本QPS仅达1497，平均延迟达到 67ms。原因是 Redis 引入了网络 RTT 和 JSON 序列化反序列化开销。
+
+<img src="test_pressure/qps_comparison.png" alt="图片描述" width="500" height="">
+
+不过，这种比较并不能体现 Redis 的价值。我们进一步在双节点环境下验证：
+
+无 Redis 版本无法支持跨节点消息传递。
+
+有 Redis 版本通过 Pub/Sub 能够把消息路由到另一台服务器，保证用户 A 在节点 1、用户 B 在节点 2 时也能收发消息。
+
+在三节点负载均衡环境下，我们发现有 Redis 版本的 QPS 接近线性扩展，总吞吐量远高于无 Redis 版本。这证明了 Redis 在分布式架构中的必要性。
+
 ## 项目运行环境
 
 - **系统**：Ubuntu 22.04 (推荐虚拟机/WSL 环境)
