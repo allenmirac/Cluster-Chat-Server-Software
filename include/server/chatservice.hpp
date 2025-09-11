@@ -1,67 +1,57 @@
-#ifndef CHATSERVICE_H
-#define CHATSERVICE_H
+#ifndef CHATSERVICE_HPP
+#define CHATSERVICE_HPP
 
-#include <muduo/net/TcpConnection.h>
-#include <mutex>
-#include <muduo/base/Condition.h>
-#include <unordered_map>
-#include <functional>
+#include "redisclient.hpp"
 #include "usermodel.hpp"
 #include "offlinemessage.hpp"
 #include "friendmodel.hpp"
 #include "groupmodel.hpp"
-using namespace std;
+#include <muduo/net/TcpConnection.h>
+#include <nlohmann/json.hpp>
+#include <functional>
+#include <unordered_map>
+#include <shared_mutex>
+#include <string>
+#include <vector>
+
 using namespace muduo;
 using namespace muduo::net;
-
-#include "json.hpp"
 using json = nlohmann::json;
+using MsgHandler = std::function<void(const TcpConnectionPtr&, json&, Timestamp)>;
 
-// 将其当成函数指针来使用
-using MsgHandler = std::function<void(const TcpConnectionPtr &conn, json &js, Timestamp)>;
-
-class ChatService
-{
+class ChatService {
 public:
-    static ChatService *instance();
-
-    void reset();
-    // 处理登陆业务
-    void login(const TcpConnectionPtr &conn, json &js, Timestamp);
-    // 处理注册业务
-    void reg(const TcpConnectionPtr &conn, json &js, Timestamp);
-
+    static ChatService* instance();
     MsgHandler getHandler(int msgid);
+    void reset();
+    void login(const TcpConnectionPtr& conn, json& js, Timestamp time);
+    void reg(const TcpConnectionPtr& conn, json& js, Timestamp time);
+    void loginOut(const TcpConnectionPtr& conn, json& js, Timestamp time);
+    void clientQuitEcption(const TcpConnectionPtr& conn);
+    void oneChat(const TcpConnectionPtr& conn, json& js, Timestamp time);
+    void addFriend(const TcpConnectionPtr& conn, json& js, Timestamp time);
+    void createGroup(const TcpConnectionPtr& conn, json& js, Timestamp time);
+    void joinGroup(const TcpConnectionPtr& conn, json& js, Timestamp time);
+    void groupChat(const TcpConnectionPtr& conn, json& js, Timestamp time);
 
-    void clientQuitEcption(const TcpConnectionPtr &conn);
-
-    void oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time);
-    void addFriend(const TcpConnectionPtr &conn, json &js, Timestamp time);
-
-    void createGroup(const TcpConnectionPtr &conn, json &js, Timestamp time);
-    void joinGroup(const TcpConnectionPtr &conn, json &js, Timestamp time);
-    void groupChat(const TcpConnectionPtr &conn, json &js, Timestamp time);
-    void loginOut(const TcpConnectionPtr &conn, json &js, Timestamp time);
 private:
     ChatService();
     ~ChatService();
-    ChatService(const ChatService &) = delete;
-    ChatService &operator=(const ChatService &) = delete;
 
-private:
-    // 存储消息id和其对应的业务处理方法
-    unordered_map<int, MsgHandler> msgHandlerMap_;
+    std::unordered_map<int, MsgHandler> msgHandlerMap_;
 
-    // 存储连接信息
-    unordered_map<int, TcpConnectionPtr> userConnMap_;
+    std::unordered_map<int, TcpConnectionPtr> userConnMap_;
+    std::shared_mutex user_conn_mutex_; // 保护 userConnMap_ 的读写锁
 
-    // 连接锁
-    mutex mutex_;
+    std::unordered_map<int, std::set<int>> groupMembers_;
+    std::shared_mutex group_mutex_; // 保护 groupMembers_ 的读写锁
 
     UserModel userModel_;
     OfflineMessage offlineMsgModel_;
     FriendModel friendModel_;
     GroupModel groupModel_;
+
+    std::unique_ptr<RedisClient> redis_client_;
 };
 
-#endif // CHATSERVICE_H
+#endif // CHATSERVICE_HPP

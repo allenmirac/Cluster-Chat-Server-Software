@@ -18,7 +18,9 @@ enum
 
     CREATE_GROUP_MSG,
     JOIN_GROUP_MSG,
-    GROUP_CHAT_MSG
+    GROUP_CHAT_MSG,
+
+    ONE_CHAT_MSG_ACK
 };
 
 #endif // PUBLIC_H

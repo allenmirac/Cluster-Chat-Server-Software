@@ -173,7 +173,7 @@ void doLoginResponse(json &responsejs)
     else
     {
         currentUser.setId(responsejs["id"]);
-        currentUser.setName(responsejs["name"]);
+        // currentUser.setName(responsejs["name"]);
         if (responsejs.contains("friends"))
         {
             currentUserFriendList.clear();

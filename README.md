@@ -143,6 +143,7 @@ mysql -u root -p chat < sql/init_chat_data.sql
 * 嵌套 CMakeLists.txt 的写法（每个源代码目录单独一个文件）。
 * 变量拼写错误导致找不到库（用 message 调试）。
 * 链接问题 → 在 CMakeLists.txt 手动补充缺失源码文件。
+* `target_link_libraries`的连接顺序问题，由于连接器按顺序从左到右解析，所以越高级的库，越要写在前面，如`muduo_base`要写在`muduo_net`的前面。
 
 2. 语言/机制
 

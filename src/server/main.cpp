@@ -3,6 +3,7 @@
 #include "chatserver.hpp"
 #include "chatservice.hpp"
 #include "mysqlconnectionpool.hpp"
+#include "redisconnectionpool.hpp"
 
 using namespace std;
 
@@ -21,7 +22,9 @@ int main()
     InetAddress addr("127.0.0.1", 2222);
     ChatServer server(&loop, addr, "ChatServer");
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
+    RedisConnectionPool *redisPool = RedisConnectionPool::getInstance();
     mysqlPool->initPool();
+    redisPool->init();
     ChatService::instance()->reset();
 
     server.start();
