@@ -5,6 +5,10 @@ void GroupModel::createGroup(Group &group)
 {
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
+    if (!conn) {
+        LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr";
+        return;
+    }
     sql::ResultSet *res;
     sql::PreparedStatement *pstmt;
     try
@@ -36,6 +40,10 @@ void GroupModel::joinGroup(int userid, int groupid, string role)
 {
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
+    if (!conn) {
+        LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr";
+        return;
+    }
     try
     {
         sql::PreparedStatement *pstmt;
@@ -59,6 +67,10 @@ vector<Group> GroupModel::queryGroups(int userid)
     vector<Group> vGroup;
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
+    if (!conn) {
+        LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr";
+        return vector<Group>();
+    }
     sql::Statement *stmt;
     sql::ResultSet *res;
     try
@@ -110,6 +122,10 @@ vector<int> GroupModel::queryGroupUsers(int userid, int groupid)
     vector<int> vGroupUser;
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
+    if (!conn) {
+        LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr";
+        return vector<int>();
+    }
     sql::Statement *stmt;
     sql::ResultSet *res;
     try

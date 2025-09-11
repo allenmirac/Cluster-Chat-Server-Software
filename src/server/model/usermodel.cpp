@@ -9,6 +9,10 @@ bool UserModel::insert(User &user)
     // sprintf(sql, "insert into User(name, password, state) values('%s', '%s', '%s')", user.getName(), user.getPassword(), user.getState());
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
+    if (!conn) {
+        LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr";
+        return false;
+    }
     // 使用预处理语句，防止 sql 注入
     try
     {
@@ -35,6 +39,10 @@ User UserModel::query(int id)
     User user;
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
+    if (!conn) {
+        LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr";
+        return false;
+    }
     sql::Statement *stmt;
     sql::ResultSet *res;
     try
@@ -70,6 +78,10 @@ void UserModel::updateState(User &user)
 {
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
+    if (!conn) {
+        LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr";
+        return;
+    }
     sql::PreparedStatement *pstmt;
     try
     {
@@ -94,6 +106,10 @@ void UserModel::resetState()
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
     sql::PreparedStatement *pstmt;
+    if (!conn) {
+        LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr";
+        return;
+    }
     try
     {
         string sql = "UPDATE User set state='offline' where state='online'";

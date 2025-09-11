@@ -6,6 +6,10 @@ void FriendModel::insert(int userid, int friendid)
 {
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
+    if (!conn) {
+        LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr";
+        return;
+    }
     try
     {
         sql::PreparedStatement *pstmt;
@@ -33,6 +37,10 @@ vector<User> FriendModel::query(int userid)
 {
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
+    if (!conn) {
+        LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr";
+        return vector<User>();
+    }
     sql::Statement *stmt;
     sql::ResultSet *res;
     vector<User> v;

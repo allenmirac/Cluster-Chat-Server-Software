@@ -1,34 +1,76 @@
 #include <vector>
+#include <thread>
+#include <chrono>
 #include "mysqlconnectionpool.hpp"
 #include "offlinemessage.hpp"
 
-bool OfflineMessage::insert(int userId, string message)
-{
-    MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
-    sql::Connection *conn = mysqlPool->getConnection();
-    // 使用预处理语句，防止 sql 注入
-    try
-    {
-        sql::PreparedStatement *pstmt;
-        pstmt = conn->prepareStatement("insert into OfflineMessage(userid, message) values(?, ?)");
-        pstmt->setInt(1, userId);
-        pstmt->setString(2, message);
-        pstmt->executeUpdate();
+bool OfflineMessage::insert(int userId, const string& message) {
+    const int maxRetries = 3;  // 最大重试次数
+    int retryCount = 0;
+    bool success = false;
 
-        delete pstmt;
+    while (retryCount < maxRetries && !success) {
+        MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
+        sql::Connection *conn = mysqlPool->getConnection();
+        if (!conn) {
+            LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr, retry " << retryCount + 1;
+            retryCount++;
+            std::this_thread::sleep_for(std::chrono::seconds(1));  // 等待1秒重试
+            continue;
+        }
+
+        try {
+            // 先处理缓冲队列中的失败消息（如果有）
+            {
+                std::lock_guard<std::mutex> lock(queueMutex_);
+                while (!failedQueue_.empty()) {
+                    auto& item = failedQueue_.front();
+                    // 执行插入（原代码逻辑）
+                    std::unique_ptr<sql::PreparedStatement> pstmt(conn->prepareStatement("INSERT INTO OfflineMessage (userid, message) VALUES (?, ?)"));
+                    pstmt->setInt(1, item.first);
+                    pstmt->setString(2, item.second);
+                    pstmt->executeUpdate();
+                    failedQueue_.pop();
+                    LOG_INFO << "OfflineMessage::insert: Processed queued message for user " << item.first;
+                }
+            }
+
+            // 插入当前消息
+            std::unique_ptr<sql::PreparedStatement> pstmt(conn->prepareStatement("INSERT INTO OfflineMessage (userid, message) VALUES (?, ?)"));
+            pstmt->setInt(1, userId);
+            pstmt->setString(2, message);
+            pstmt->executeUpdate();
+            success = true;
+            LOG_INFO << "OfflineMessage::insert: Success for user " << userId;
+        } catch (sql::SQLException &e) {
+            LOG_ERROR << "OfflineMessage::insert: SQLException: " << e.what() << " (code: " << e.getErrorCode() << ")";
+        } catch (...) {
+            LOG_ERROR << "OfflineMessage::insert: Unknown exception";
+        }
+
+        // 归还连接
         mysqlPool->releaseConnection(conn);
-        return true;
     }
-    catch (sql::SQLException &e)
-    {
-        LOG_ERROR << "OfflineMessage::insert, SQL Exception: " << e.what();
+
+    if (!success) {
+        // 重试失败，放入队列缓冲（模拟Redis队列）
+        {
+            std::lock_guard<std::mutex> lock(queueMutex_);
+            failedQueue_.push({userId, message});
+            LOG_WARN << "OfflineMessage::insert: Failed after retries, queued message for user " << userId << ". Queue size: " << failedQueue_.size();
+        }
+        // 可选：如果队列过大，触发警报或持久化到文件，但为简单起见，仅队列缓冲
     }
-    return false;
+    return success;
 }
 bool OfflineMessage::remove(int userId)
 {
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
+    if (!conn) {
+        LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr";
+        return false;
+    }
     // 使用预处理语句，防止 sql 注入
     try
     {
@@ -51,6 +93,10 @@ vector<string> OfflineMessage::query(int userId)
 {
     MySQLConnectionPool *mysqlPool = MySQLConnectionPool::getInstance();
     sql::Connection *conn = mysqlPool->getConnection();
+    if (!conn) {
+        LOG_ERROR << "OfflineMessage::insert: getConnection() returned nullptr";
+        return vector<string>();
+    }
     vector<string> v;
     sql::Statement *stmt;
     sql::ResultSet *res;
