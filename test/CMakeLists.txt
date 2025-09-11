@@ -1,3 +1,4 @@
 add_subdirectory(testJson)
 add_subdirectory(testMysqlConnectionPool)
-# add_subdirectory(testMuduo)
+add_subdirectory(testMuduo)
+add_subdirectory(testRedis)
